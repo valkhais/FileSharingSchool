@@ -9,7 +9,7 @@ from  pyspark.sql.types import DoubleType
 def save_rdd_as_single_text_file(rdd_object, file_name):
     with open(file_name, 'w') as f:
         for item in rdd_object.collect():
-	        f.write(item)
+	    f.write(item)
 
 def calc_lifts(k=10,lamda=15):
     start = time()
@@ -57,17 +57,17 @@ def calc_lifts(k=10,lamda=15):
     
     # no need for different all data because we want the y to be possitive so we use "pos_all_data"
     neg_cross = neg_x_data.join(pos_all_data).filter(lambda (u,(((m1,r1),(p1,n1,t1)),(((m2,r2),(p2,n2,t2))))): m1!=m2)\
-			              .map(lambda (u,(((m1,r1),(p1,n1,t1)),((m2,r2),(p2,n2,t2)))): ((m1,m2),(1,n1,p2)))\
-			              .reduceByKey(lambda x,y: (x[0]+y[0],x[1],x[2]))
-
-    NegLift = pos_cross.map(lambda ((m1,m2),(b,n1,p2)): (m1,m2,float(n) * float(b)/float((n1*p2))))    
+			                     .map(lambda (u,(((m1,r1),(p1,n1,t1)),((m2,r2),(p2,n2,t2)))): ((m1,m2),(1,n1,p2)))\
+		                             .reduceByKey(lambda x,y: (x[0]+y[0],x[1],x[2]))
+	
+    NegLift = neg_cross.map(lambda ((m1,m2),(b,n1,p2)): (m1,m2,float(n) * float(b)/float((n1*p2))))    
     
     # post-processing for k filtration and file save
     MapedNegLift = NegLift.map(lambda (x,y,p): (x,([(y,p)])))
     ReducedNegLift = MapedNegLift.reduceByKey(lambda x,y: (x+y))
     FinalNegLift = ReducedNegLift.map(lambda x: (x[0], sorted(x[1],key=lambda u: u[1],reverse=True)[:k]))\
-			                     .flatMap(lambda data: [(data[0], e) for e in data[1]])\
-				                 .map(lambda (x,(y,p)): str(x) + ',' + str(y) + ',' + str(p) + '\n')
+	                         .flatMap(lambda data: [(data[0], e) for e in data[1]])\
+		                 .map(lambda (x,(y,p)): str(x) + ',' + str(y) + ',' + str(p) + '\n')
 
     save_rdd_as_single_text_file(FinalNegLift, "/home/valkhais/NegLift.csv")
                              
